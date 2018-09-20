@@ -1,0 +1,15 @@
+label d0 vAngle
+
+alias vCorrected r0
+ 
+l vCorrected d0 SolarAngle
+
+min vCorrected vCorrected 165
+max vCorrected vCorrected 15
+sub vCorrected vCorrected 15
+div vCorrected vCorrected 1.5
+ 
+s db Setting vCorrected
+ 
+yield
+j 4
