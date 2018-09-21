@@ -1,1 +1,48 @@
+#Devices
+alias MaxTempMem d0 #Memory w/ desired max temp (C)
+alias MinTempMem d1 #Memory w/ desired min temp (C)
+alias TempSens d2 #Gas sensor to monitor temp
+alias Cooler d3 #Wall Cooler
+alias Heater d4 #Wall Heater
 
+#Variables
+alias maxTemp r0
+alias minTemp r1
+alias curTemp r2
+alias setCooler r3
+alias setHeater r4
+alias boolBothOff r5
+
+#Beginning of cycle
+Cycle:
+#load current and desired temps into vars
+l maxTemp MaxTempMem Setting
+l minTemp MinTempMem Setting
+l curTemp TempSens Temperature
+
+sub curTemp curTemp 273.15 #convert to Celsius
+s db Setting curTemp #set IC to curTemp for debug
+
+#Compare current to desired temps and set command
+slt setCooler maxTemp curTemp
+slt setHeater curTemp minTemp
+
+#Check if bothsetAircon or setHeat are 0,
+#then jump to setBothOff
+nor boolBothOff setCooler setHeater
+beq	boolBothOff	1 setBothOff
+
+#else send command to devices and restart cycle
+s Cooler On setCooler
+s Heater On setHeater
+yield
+j Cycle
+
+#Set both devices off if within desired temp range
+#then restart cycle
+setBothOff:
+s Cooler On 0
+s Heater On 0
+move boolBothOff 0
+yield
+j Cycle
