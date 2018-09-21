@@ -1,15 +1,15 @@
-label d0 vAngle
+label d0 iDaylightSensor
 
-alias vCorrected r0
+alias vAngle r0
  
-l vCorrected d0 SolarAngle
+l vAngle iDaylightSensor SolarAngle
 
-min vCorrected vCorrected 165
-max vCorrected vCorrected 15
-sub vCorrected vCorrected 15
-div vCorrected vCorrected 1.5
+min vAngle vAngle 165
+max vAngle vAngle 15
+sub vAngle vAngle 15
+div vAngle vAngle 1.5
  
-s db Setting vCorrected
+s db Setting vAngle
  
 yield
-j 4
+j 5
