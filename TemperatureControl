@@ -1,45 +1,48 @@
-move r4 2.5//Turns on Heater/Cooler at +/- 2.5
-move r3 295//21.85 Degrees Celsius in Kelvin
-move r2 0.5//Shuts off +/- 0.5
+#Devices
+alias MaxTempMem d0 #Memory w/ desired max temp (C)
+alias MinTempMem d1 #Memory w/ desired min temp (C)
+alias TempSens d2 #Gas sensor to monitor temp
+alias Cooler d3 #Wall Cooler
+alias Heater d4 #Wall Heater
+
+#Variables
+alias maxTemp r0
+alias minTemp r1
+alias curTemp r2
+alias setCooler r3
+alias setHeater r4
+alias boolBothOff r5
+
+#Beginning of cycle
+Cycle:
+#load current and desired temps into vars
+l maxTemp MaxTempMem Setting
+l minTemp MinTempMem Setting
+l curTemp TempSens Temperature
+
+sub curTemp curTemp 273.15 #convert to Celsius
+s db Setting curTemp #set IC to curTemp for debug
+
+#Compare current to desired temps and set command
+slt setCooler maxTemp curTemp
+slt setHeater curTemp minTemp
+
+#Check if bothsetAircon or setHeat are 0,
+#then jump to setBothOff
+nor boolBothOff setCooler setHeater
+beq	boolBothOff	1 setBothOff
+
+#else send command to devices and restart cycle
+s Cooler On setCooler
+s Heater On setHeater
 yield
-//Check if cold
-sub r0 r3 r4
-sub r0 r0 i0
-bltz r0 12//Skip if room is not cold
-move o -1//Hey, the room is cold!
-move i1 0//set Memory.Cooler false
-move i2 1//set Memory.Heater true
-j 3
-//check if hot
-add r0 r3 r4
-sub r0 r0 i0
-bgtz r0 20//Skip if room is not hot
-move o 1//Hey, the room is hot!
-move i1 1//set Memory.Cooler true
-move i2 0//set Memory.Heater false
-j 3
-//Room is almost perfect temp
-move o 0//not outside of hysteresis
-bgtz i1 26//Cooler is on, skip to that and check if can turn off
-bgtz i2 32//Heater is on, skip to that and check if can turn off
-j 3//Neither is on, shall we check the temp again?
-//begin Memory.Cooler.Reset
-add r0 r3 r2
-sub r0 r0 i0
-bltz r0 3//not cold enough, try again later
-move i1 0//reset Memory.Cooler
-j 3
-//begin Memory.Heater.Reset
-sub r0 r3 r2
-sub r0 r0 i0
-bgtz r0 3//not hot enough, try again later
-move i2 0//reset Memory.Heater
-j 3
-//:input:0:LogicReader GasSensor.Temperature
-//:input:1:Memory.Cooler
-//:input:2:Memory.Heater
-//:internal:0:Accumulator
-//:internal:1:Reserved
-//:internal:2:ShutOff Tolerance
-//:internal:3:Thermostat setting
-//:internal:4:Thermostat hysteresis
+j Cycle
+
+#Set both devices off if within desired temp range
+#then restart cycle
+setBothOff:
+s Cooler On 0
+s Heater On 0
+move boolBothOff 0
+yield
+j Cycle
